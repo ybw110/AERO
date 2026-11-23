@@ -1,91 +1,167 @@
-﻿# AERO / Route1 Open-Set Domain Generalization Framework
+﻿<div align="center">
 
-This repository contains the implementation and experiment scripts used for the TII manuscript on **AERO (Route1)** under open-set domain generalization for bearing fault diagnosis.
+# AERO: Adaptive Environment Routing for Open-Set Fault Diagnosis Under Latent Domain Shifts
 
-Current public scope in this folder:
-- Main scenarios: **Setting B** (cross-domain) and **Setting C** (cross-dataset)
-- Main datasets: **CWRU** and **JNU**
-- Newly added baselines: **AFRDN** and **WPA-PDG**
-- New control ablation: **EQCAP_NO_ENV** (equal-capacity control)
-- OOD score comparison: **MSP / Energy / MaxLogit**
-- Pseudo-environment interpretability analysis and visualization
+[![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Manuscript-Under%20Revision%20(MSSP)-orange.svg)](#citation)
 
-## 1. Repository Layout
+**Bowen Yu**<sup>1</sup>, **Donghai Han**<sup>1,\*</sup>, **Zhonglei Shen**<sup>1</sup>, **Zhibin Zhao**<sup>1</sup>, **Wenxian Yang**<sup>2</sup>, **Liuyang Zhang**<sup>1,\*</sup>, **Ruqiang Yan**<sup>1</sup>, **Xuefeng Chen**<sup>1</sup>
+
+<sup>1</sup> *School of Mechanical Engineering, Xi'an Jiaotong University, Xi'an 710049, China*  
+<sup>2</sup> *School of Computing and Engineering, University of Huddersfield, Huddersfield HD1 3DH, UK*
+
+</div>
+
+---
+
+## Overview
+
+Industrial rotating machinery operates under time-varying speeds, loads, and acquisition conditions, while previously unseen fault modes can emerge unexpectedly during deployment. Most existing methods treat distribution shift and open-set recognition separately, or rely on rigid offline pseudo-environment clustering that becomes unstable when explicit domain labels are unavailable.
+
+**AERO (Adaptive Environment Routing Optimization)** is a training-time framework for **open-set fault diagnosis (OSFD) under latent domain shifts** without environment annotations. AERO closes the loop between latent-structure discovery and invariant representation learning through three coupled mechanisms:
+
+1. **Reconstruction-Based Environment Routing**: Multiple parallel expert decoders reconstruct input vibration signals from shared latent representations; sample-wise reconstruction errors dynamically yield soft/hard routing assignments as pseudo-domain evidence.
+2. **Schedule-Assisted Expert Consolidation**: Starting from an over-parameterized expert pool ($M_{\max}$), AERO progressively prunes redundant experts toward a compact, stable latent environment structure.
+3. **Confidence-Weighted Adversarial Invariant Learning**: A Gradient Reversal Layer (GRL) aligns features across the inferred pseudo-environments while confidence weighting down-weights noisy or class-entangled assignments.
+
+> **Zero Deployment Overhead:** All routing decoders and the domain discriminator are discarded after training. The deployed model retains the exact inference pathway, parameter count, and FLOPs of a standard encoder–classifier backbone.
+
+<p align="center">
+  <img src="assets/fig1_problem_motivation.png" alt="Problem Motivation" width="88%">
+  <br>
+  <em>Figure 1: Open-set fault diagnosis under latent environment shifts without training-time domain annotations.</em>
+</p>
+
+---
+
+## Method Architecture
+
+<p align="center">
+  <img src="assets/fig2_aero_framework.png" alt="AERO Framework" width="95%">
+  <br>
+  <em>Figure 2: Overall architecture of the proposed AERO training-time framework.</em>
+</p>
+
+---
+
+## Representative Qualitative & Mechanism Highlights
+
+> *Note: This repository provides the core implementation and representative figures from the manuscript. Complete experimental logs, raw checkpoints, and full supplementary tables are excluded for clarity and conciseness.*
+
+<p align="center">
+  <img src="assets/fig3_routing_dynamics.png" alt="Expert Routing Dynamics" width="88%">
+  <br>
+  <em>Figure 3: Progressive expert routing and consolidation dynamics during training, pruning redundant experts into a compact core structure.</em>
+</p>
+
+<p align="center">
+  <img src="assets/fig4_tsne_aero.png" alt="t-SNE Representation" width="62%">
+  <br>
+  <em>Figure 4: Representative t-SNE feature visualization under cross-domain open-set testing, showing compact known-class clusters and clear separation from unknown faults.</em>
+</p>
+
+---
+
+## Repository Structure
 
 ```text
-route1_framework/
-├── algorithms/                     # Route1 + baseline training logic
-├── datasets/                       # CWRU/JNU + optional SELF loaders
-├── models/                         # Route1 and baseline model definitions
-├── scripts/                        # aggregation / plotting / analysis scripts
-├── run_scenario_benchmark.py       # scenario runner (A/B/C)
-├── run_ablation_benchmark.py       # ablation runner (including EQCAP_NO_ENV)
-├── train.py / test.py              # Route1 train/test
-├── train_baseline.py / test_baseline.py
-├── BASELINE_AFRDN_WPAPDG_README_CN.md
-├── ABLATION_EQCAP_README_CN.md
-├── OOD_README_CN.md
-└── PSEUDOENV_ALIGNMENT_README_CN.md
+AERO/
+├── assets/                                  # Selected manuscript figures
+├── algorithms/
+│   ├── route1_algorithm.py                  # Core AERO alternating optimization & OOD scoring
+│   └── baseline_methods.py                  # Representative DG / OSFD baseline algorithms
+├── models/
+│   ├── routing_model.py                     # Shared encoder, multi-expert decoders, router & GRL
+│   └── baseline_model.py                    # Backbone and baseline architectures
+├── datasets/
+│   ├── base_dataset.py                      # Base dataset & sliding-window utilities
+│   ├── builder.py                           # Unified cross-domain / cross-dataset loader builder
+│   ├── cwru_jnu.py                          # CWRU and JNU bearing dataset loaders
+│   └── self_npz.py                          # Custom physical testbed (.npz) loader
+├── utils/
+│   ├── common.py                            # Seeding and path utilities
+│   ├── metrics.py                           # KnownAcc, AUROC, AUPR, FPR95 metrics
+│   └── visualization.py                     # Diagnostic plots (collapse curves, OOD histograms)
+├── scripts/
+│   ├── compare_ood_scores_from_checkpoints.py  # Post-hoc MSP / Energy / MaxLogit evaluation
+│   └── profile_model_efficiency.py          # Parameter, FLOPs, and inference latency profiling
+├── config.py                                # Centralized hyperparameters & ablation flags
+├── train.py                                 # AERO training entrypoint
+├── test.py                                  # AERO evaluation entrypoint
+├── train_baseline.py                        # Baseline training entrypoint
+├── test_baseline.py                         # Baseline evaluation entrypoint
+├── run_scenario_benchmark.py                # Cross-domain (Setting B) & Cross-dataset (Setting C) runner
+├── run_ablation_benchmark.py                # Structural, training & equal-capacity ablation runner
+└── requirements.txt
 ```
 
-## 2. Environment
+---
 
-Recommended:
-- Python `3.9` or `3.10`
-- PyTorch with CUDA matching your server
+## Quick Start
 
-Install dependencies:
+### 1. Environment Setup
 
 ```bash
-cd 代码/route1_framework
+git clone https://github.com/ybw110/AERO.git
+cd AERO
+python -m venv .venv
+source .venv/bin/activate        # On Windows: .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-If your environment has `GLIBCXX` issues, prepend:
+### 2. Data Preparation
 
-```bash
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+Organize public bearing datasets under `data/` (configurable in `config.py`):
+
+```text
+data/
+├── CWRU/                        # Case Western Reserve University bearing dataset (.mat)
+└── JNU/                         # Jiangnan University bearing dataset (.csv)
 ```
 
-## 3. Data Preparation
+For custom physical testbed datasets, pass `--self_processed_root /path/to/Processed_Data_Numpy` containing `SelfA/` and `SelfB/`.
 
-Default dataset roots are configured in `config.py`:
-- `数据集/CWRU/参考文献`
-- `数据集/JNU/JNU-Bearing-Dataset-main`
+### 3. Training & Evaluation
 
-For SELF datasets, pass runtime args instead of hard-coding:
-- `--self_processed_root /path/to/Processed_Data_Numpy`
-- expected subfolders: `SelfA/`, `SelfB/`
-
-## 4. Quick Reproduction (Paper-Core)
-
-### 4.1 New baselines only (AFRDN + WPA-PDG), CWRU->JNU direction
+**Train AERO (Single Run):**
 
 ```bash
-bash scripts/run_ab_c_multiseed.sh \
-  --new_methods_only \
-  --repeat_strategy both \
-  --unknown_list 1,2,3 \
-  --seeds 41,42,43 \
-  --direction c2j \
-  --exp_prefix tii319_afrdn_wpa_c2j
+python train.py \
+  --dataset CWRU \
+  --domains 0HP,1HP,2HP \
+  --known_classes 0,1,3 \
+  --unknown_classes 2 \
+  --epochs 30 \
+  --batch_size 64 \
+  --m_max 15 \
+  --seed 42
 ```
 
-### 4.2 New baselines only (AFRDN + WPA-PDG), JNU->CWRU direction
+**Evaluate on Unseen Target Domain / Dataset:**
 
 ```bash
-bash scripts/run_ab_c_multiseed.sh \
-  --new_methods_only \
-  --repeat_strategy both \
-  --unknown_list 1,2,3 \
-  --seeds 41,42,43 \
-  --direction j2c \
-  --exp_prefix tii319_afrdn_wpa_j2c
+python test.py \
+  --ckpt outputs/<run_dir>/best_model.pt \
+  --dataset_override CWRU \
+  --domains_override 3HP
 ```
 
-### 4.3 Equal-capacity control ablation (FULL vs EQCAP_NO_ENV)
+**Run Cross-Domain (Setting B) or Cross-Dataset (Setting C) Benchmark:**
 
-CWRU direction:
+```bash
+python run_scenario_benchmark.py \
+  --scenario B_CROSS_DOMAIN \
+  --dataset CWRU \
+  --domains 0HP,1HP,2HP,3HP \
+  --known_classes 0,1,3 \
+  --unknown_classes 2 \
+  --methods ROUTE1,ERM,DIVERSIFY,AMINET,DACN,AFRDN,WPA_PDG \
+  --seed 42
+```
+
+**Run Ablation Study (including Equal-Capacity Control `EQCAP_NO_ENV`):**
 
 ```bash
 python run_ablation_benchmark.py \
@@ -94,90 +170,25 @@ python run_ablation_benchmark.py \
   --train_dataset CWRU --train_domains 0HP,1HP,2HP,3HP \
   --test_dataset JNU --test_domains 600,800,1000 \
   --known_classes 0,1,3 --unknown_classes 2 \
-  --epochs 20 --batch_size 64 --m_max 15 \
-  --seeds 41,42,43 \
   --variants FULL,EQCAP_NO_ENV \
-  --exp_name ablation_eqcap_cwru
+  --seeds 41,42,43
 ```
 
-JNU direction:
+---
 
-```bash
-python run_ablation_benchmark.py \
-  --scenario B_AND_C \
-  --dataset JNU --domains 600,800,1000 \
-  --train_dataset JNU --train_domains 600,800,1000 \
-  --test_dataset CWRU --test_domains 0HP,1HP,2HP,3HP \
-  --known_classes 0,1,3 --unknown_classes 2 \
-  --epochs 20 --batch_size 64 --m_max 15 \
-  --seeds 41,42,43 \
-  --variants FULL,EQCAP_NO_ENV \
-  --exp_name ablation_eqcap_jnu
+## Citation
+
+If you find this repository helpful in your research, please consider citing our work:
+
+```bibtex
+@article{yu2026aero,
+  title   = {AERO: Adaptive Environment Routing for Open-Set Fault Diagnosis Under Latent Domain Shifts},
+  author  = {Yu, Bowen and Han, Donghai and Shen, Zhonglei and Zhao, Zhibin and Yang, Wenxian and Zhang, Liuyang and Yan, Ruqiang and Chen, Xuefeng},
+  journal = {Mechanical Systems and Signal Processing (Under Revision)},
+  year    = {2026}
+}
 ```
 
-### 4.4 OOD score comparison for new baselines only (no retraining)
+## License
 
-```bash
-python scripts/compare_ood_scores_from_checkpoints.py \
-  --outputs_root outputs_scenarios \
-  --methods AFRDN,WPA_PDG \
-  --exp_prefixes tii319_afrdn_wpa_c2j,tii319_afrdn_wpa_j2c \
-  --score_types msp,energy,maxlogit \
-  --energy_temp 1.0 \
-  --unknowns 1,2,3 \
-  --seeds 41,42,43 \
-  --settings B,C \
-  --out_dir outputs_scenarios/ood_score_compare_afrdn_wpa
-```
-
-### 4.5 Pseudo-environment alignment analysis and figures
-
-```bash
-bash scripts/run_pseudoenv_alignment.sh \
-  --mode all \
-  --unknowns 1,2,3 \
-  --seeds 41,42,43 \
-  --out_tag pseudoenv_alignment_all_u123_s414243
-```
-
-## 5. Key Outputs
-
-- Scenario summary:
-  - `outputs_scenarios/<exp_name>/summary.csv`
-  - `outputs_scenarios/<exp_name>/summary.md`
-- Multi-run aggregation:
-  - `outputs_scenarios/<exp_prefix>/summary_mean_pm_std_by_case.csv`
-  - `outputs_scenarios/<exp_prefix>/summary_mean_pm_std_overall.csv`
-- Ablation summary:
-  - `outputs_ablation/<exp_name>/summary.csv`
-- Pseudo-env alignment analysis:
-  - `outputs_scenarios/<tag>_analysis/alignment_unknown_rotation_overall.csv`
-  - `outputs_scenarios/<tag>_analysis/heatmaps/*.png`
-  - `outputs_scenarios/<tag>_analysis/sankey/*.png`
-
-## 6. Documentation Index (Chinese)
-
-- Baseline addition (AFRDN + WPA-PDG): `BASELINE_AFRDN_WPAPDG_README_CN.md`
-- Equal-capacity ablation: `ABLATION_EQCAP_README_CN.md`
-- OOD score protocol (MSP/Energy/MaxLogit): `OOD_README_CN.md`
-- Pseudo-environment interpretability: `PSEUDOENV_ALIGNMENT_README_CN.md`
-- SELF-only workflow: `SELF_EXPERIMENT_GUIDE_CN.md`
-
-## 7. Reproducibility Notes
-
-- Use fixed seeds `41,42,43` and unknown rotations `1,2,3`.
-- Keep evaluation protocol unified across methods:
-  - same split and known/unknown rotation,
-  - same epochs/batch size/input length/normalization,
-  - same OOD score rule when comparing methods.
-- For paper tables, report `KnownAcc`, `AUROC`, `AUPR`, `FPR95` under Setting B/C.
-
-## 8. Citation
-
-A formal citation entry will be updated after manuscript metadata is finalized.
-For now, please cite the corresponding TII submission title used in your manuscript.
-
-## 9. License
-
-This is a pre-release research codebase for academic evaluation.
-Formal open-source licensing terms will be added after manuscript process finalization.
+This project is released under the [MIT License](LICENSE).

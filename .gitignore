@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+
+# IDEs & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Data, checkpoints & experiment outputs
+data/
+outputs/
+outputs_scenarios/
+outputs_ablation/
+outputs_sensitivity/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.mat
+*.npz
+*.npy
