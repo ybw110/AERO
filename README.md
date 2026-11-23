@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Manuscript-Under%20Revision%20(MSSP)-orange.svg)](#citation)
+[![Venue](https://img.shields.io/badge/MSSP-Accepted-brightgreen.svg)](#citation)
 
 **Bowen Yu**<sup>1</sup>, **Donghai Han**<sup>1,\*</sup>, **Zhonglei Shen**<sup>1</sup>, **Zhibin Zhao**<sup>1</sup>, **Wenxian Yang**<sup>2</sup>, **Liuyang Zhang**<sup>1,\*</sup>, **Ruqiang Yan**<sup>1</sup>, **Xuefeng Chen**<sup>1</sup>
 
@@ -184,7 +184,7 @@ If you find this repository helpful in your research, please consider citing our
 @article{yu2026aero,
   title   = {AERO: Adaptive Environment Routing for Open-Set Fault Diagnosis Under Latent Domain Shifts},
   author  = {Yu, Bowen and Han, Donghai and Shen, Zhonglei and Zhao, Zhibin and Yang, Wenxian and Zhang, Liuyang and Yan, Ruqiang and Chen, Xuefeng},
-  journal = {Mechanical Systems and Signal Processing (Under Revision)},
+  journal = {Mechanical Systems and Signal Processing},
   year    = {2026}
 }
 ```
